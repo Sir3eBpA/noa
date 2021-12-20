@@ -164,7 +164,7 @@ export class World extends EventEmitter {
     /** @internal */
     report(): void;
 }
-import EventEmitter from "events";
+import { EventEmitter } from "events";
 import Chunk from "./chunk";
 import { ChunkStorage } from "./util";
 declare function chunkCoordsToIndexesGeneral(x: any, y: any, z: any): number[];
