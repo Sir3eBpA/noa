@@ -41,6 +41,7 @@ var defaults = {
     preserveDrawingBuffer: true,
     octreeBlockSize: 2,
     renderOnResize: true,
+    fov: 0.8
 }
 
 
@@ -125,6 +126,7 @@ function initScene(self, canvas, opts) {
     // camera, and a node to hold it and accumulate rotations
     self._cameraHolder = new TransformNode('camHolder', scene)
     self._camera = new FreeCamera('camera', new Vector3(0, 0, 0), scene)
+    self._camera.fov = opts.fov;
     self._camera.parent = self._cameraHolder
     self._camera.minZ = .01
     self._cameraHolder.visibility = false
