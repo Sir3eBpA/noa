@@ -23,8 +23,9 @@
         "url": "https://github.com/fenomas/noa/issues"
     },
     "dependencies": {
-        "aabb-3d": "fenomas/aabb-3d",
-        "box-intersect": "fenomas/box-intersect",
+        "@babylonjs/core": "^5.0.0-alpha.65",
+        "aabb-3d": "github:fenomas/aabb-3d",
+        "box-intersect": "github:fenomas/box-intersect",
         "ent-comp": "^0.10.1",
         "events": "^3.3.0",
         "fast-voxel-raycast": "^0.1.1",
@@ -36,13 +37,13 @@
         "voxel-physics-engine": "^0.11.1"
     },
     "peerDependencies": {
-        "@babylonjs/core": "^5.0.0-alpha.48"
+        "@babylonjs/core": "^5.0.0-alpha.65"
     },
     "devDependencies": {
-        "eslint": "^8.3.0",
+        "eslint": "^8.5.0",
         "js-beautify": "^1.14.0",
-        "typedoc": "^0.22.9",
-        "typescript": "^4.4.4"
+        "typedoc": "^0.22.10",
+        "typescript": "^4.5.4"
     },
     "keywords": [
         "voxel",
