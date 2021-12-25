@@ -389,6 +389,13 @@ export class Entities extends ECS {
 
         return eid
     }
+
+    /*
+     * Helper to remove an entity
+     */
+    delete(eid) {
+        this.deleteEntity(eid);
+    }
 }
 
 
