@@ -189,7 +189,7 @@ export class World extends EventEmitter {
 World.prototype.getBlockID = function (x, y, z) {
     var [ci, cj, ck] = this._coordsToChunkIndexes(x, y, z)
     var chunk = this._storage.getChunkByIndexes(ci, cj, ck)
-    if (!chunk) return 0
+    if (!chunk) return 255;
     var [i, j, k] = this._coordsToChunkLocals(x, y, z)
     return chunk.voxels.get(i, j, k)
 }
@@ -198,7 +198,7 @@ World.prototype.getBlockID = function (x, y, z) {
 World.prototype.getBlockSolidity = function (x, y, z) {
     var [ci, cj, ck] = this._coordsToChunkIndexes(x, y, z)
     var chunk = this._storage.getChunkByIndexes(ci, cj, ck)
-    if (!chunk) return false
+    if (!chunk) return true;
     var [i, j, k] = this._coordsToChunkLocals(x, y, z)
     return !!chunk.getSolidityAt(i, j, k)
 }
