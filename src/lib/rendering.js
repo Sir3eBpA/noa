@@ -100,7 +100,7 @@ export class Rendering {
         this._engine = null
         /** @internal */
         this._octreeManager = null
-        initScene(this, canvas, opts)
+        initScene(this, opts)
 
         // for debugging
         if (opts.showFPS) setUpFPS()
@@ -108,16 +108,14 @@ export class Rendering {
 }
 
 // Constructor helper - set up the Babylon.js scene and basic components
-function initScene(self, canvas, opts) {
+function initScene(self, opts) {
 
     // init internal properties
-    self._engine = new Engine(canvas, opts.antiAlias, {
-        preserveDrawingBuffer: opts.preserveDrawingBuffer,
-    })
-    self._scene = new Scene(self._engine)
+    self._engine = opts.engine;
+    self._scene = opts.scene;
     var scene = self._scene
     // remove built-in listeners
-    scene.detachControl()
+    //scene.detachControl()
 
     // octree manager class
     var blockSize = Math.round(opts.octreeBlockSize)

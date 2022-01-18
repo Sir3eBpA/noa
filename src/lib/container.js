@@ -38,7 +38,10 @@ export class Container extends EventEmitter {
         this.element = opts.domElement || createContainerDiv()
 
         /** The `canvas` element that the game will draw into */
-        this.canvas = getOrCreateCanvas(this.element)
+        if(!!opts.activeCanvas)
+            this.canvas = opts.activeCanvas;
+        else 
+            this.canvas = getOrCreateCanvas(this.element)
 
         /** Whether the browser supports pointerLock. @readonly */
         this.supportsPointerLock = false
