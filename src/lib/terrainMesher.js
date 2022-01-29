@@ -64,7 +64,7 @@ function TerrainMesher(noa) {
 
         // args
         var mats = matGetter || noa.registry.getBlockFaceMaterial
-        var cols = colGetter || noa.registry._getMaterialVertexColor
+        var cols = this.getRandomColor /*colGetter*/ || noa.registry._getMaterialVertexColor
         var ao = (useAO === undefined) ? noa.rendering.useAO : useAO
         var vals = aoVals || noa.rendering.aoVals
         var rev = isNaN(revAoVal) ? noa.rendering.revAoVal : revAoVal
@@ -99,7 +99,9 @@ function TerrainMesher(noa) {
         chunk._terrainMeshes.length = 0
     }
 
-
+    this.getRandomColor = function() {
+        return [Math.random(), Math.random(), Math.random()];
+    }
 
 }
 
@@ -448,8 +450,10 @@ function MeshBuilder(noa) {
 
 function GreedyMesher(noa) {
 
-    var maskCache = new Int16Array(16)
-    var aomaskCache = new Uint16Array(16)
+    var maskCache = new Int16Array(16);
+    var aomaskCache = new Uint16Array(16);
+    var lightCache = new Uint16Array(16);
+    var lightData = ndarray(new Uint16Array(32*32*32), [32,32,32]);
 
     var solidLookup = noa.registry._solidityLookup
     var opacityLookup = noa.registry._opacityLookup
@@ -462,7 +466,15 @@ function GreedyMesher(noa) {
         // collected geometry data for the current mesh
         var geomData = cachedGeometryData
         geomData.reset()
-
+        
+        for(var i=0; i<lightData.shape[0]; ++i) {
+            for(var j=0; j<lightData.shape[1]; ++j) {
+                for(var k = 0; k < lightData.shape[2]; ++k) {
+                   lightData.set(i,j,k,0);
+                }
+            }
+        }
+        
         // how to apply AO packing in first masking function
         var skipReverseAO = (revAoVal === aoValues[0])
 
@@ -484,6 +496,7 @@ function GreedyMesher(noa) {
             if (maskCache.length < len1 * len2) {
                 maskCache = new Int16Array(len1 * len2)
                 aomaskCache = new Uint16Array(len1 * len2)
+                lightCache = new Uint16Array(len1 * len2);
             }
 
             // iterate along current major axis..
@@ -492,6 +505,8 @@ function GreedyMesher(noa) {
                 // fills mask and aomask arrays with values
                 constructMeshMasks(i, d, arrT, getMaterial, doAO, skipReverseAO)
 
+                constructVoxelLight(i, d, arrT, getMaterial);
+                
                 // parses the masks to do greedy meshing
                 constructGeometryFromMasks(i, d, u, v, len1, len2,
                     doAO, geomData, getColor, aoValues, revAoVal)
@@ -508,30 +523,42 @@ function GreedyMesher(noa) {
 
 
 
-
-
-
-
-    //      Greedy meshing inner loop one
-    //
-    // iterating across ith 2d plane, with n being index into masks
-
-    function constructMeshMasks(i, d, arrT, getMaterial, doAO, skipRevAO) {
-        var len = arrT.shape[1]
-        var mask = maskCache
-        var aomask = aomaskCache
+    function constructVoxelLight(i, d, arrT, getMaterial) {
+        var len = arrT.shape[1];
+        var lights = lightCache;
         // set up for quick array traversals
-        var n = 0
-        var materialDir = d * 2
-        var data = arrT.data
-        var dbase = arrT.index(i - 1, 0, 0)
-        var istride = arrT.stride[0]
-        var jstride = arrT.stride[1]
-        var kstride = arrT.stride[2]
+        var n = 0;
+        var materialDir = d * 2;
+        var data = arrT.data;
+        var dbase = arrT.index(i - 1, 0, 0);
+        var istride = arrT.stride[0];
+        var jstride = arrT.stride[1];
+        var kstride = arrT.stride[2];
 
+        for(let x = 0; x < arrT.shape[0]; ++x) {
+            for(let y = 0; y < arrT.shape[1]; ++y) {
+                for(let z = 0; z < arrT.shape[2]; ++z) {
+
+                    if(arrT.get(x,y,z) !== 2) {
+                        continue;
+                    }
+                    
+                    for(let x1 = -lightBrightness; x1 <= lightBrightness; ++x1) {
+                        for(let y1 = -lightBrightness; y1 <= lightBrightness; ++y1) {
+                            for(let z1 = -lightBrightness; z1 <= lightBrightness; ++z1) {
+                                let manhattanDistance = Math.abs(x1 - 0) + Math.abs(y1 - 0) + Math.abs(z1 - 0);
+                                let illumination = lightBrightness - Math.floor(manhattanDistance / lightBrightness);
+                                lightData.set(x + x1, y + y1, z + z1, illumination);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
         for (var k = 0; k < len; ++k) {
-            var d0 = dbase
-            dbase += kstride
+            var d0 = dbase;
+            dbase += kstride;
             for (var j = 0; j < len; j++, n++, d0 += jstride) {
 
                 // mask[n] will represent the face needed between i-1,j,k and i,j,k
@@ -541,19 +568,70 @@ function GreedyMesher(noa) {
                 // no need to zero it here when no face is needed
 
                 // IDs at i-1,j,k  and  i,j,k
-                var id0 = data[d0]
-                var id1 = data[d0 + istride]
+                var forwardFaceID = data[d0];
+                var backwardFaceID = data[d0 + istride];
+                
+                // most common case: never a face between same voxel IDs, 
+                // so skip out early
+                if (forwardFaceID === backwardFaceID) continue
+                
+                var faceDir = getFaceDir(forwardFaceID, backwardFaceID, getMaterial, materialDir)
+                // if this is a visible voxel
+                if (faceDir) {
+                    var lightIntensity = lightData.get(i,j,k);
+                    lights[n] = lightIntensity;
+                }
+            }
+        }
+    }
+
+
+
+    //      Greedy meshing inner loop one
+    //
+    // iterating across ith 2d plane, with n being index into masks
+
+    var lightBrightness = 3;
+
+    function constructMeshMasks(i, d, arrT, getMaterial, doAO, skipRevAO) {
+        var len = arrT.shape[1];
+        var mask = maskCache;
+        var aomask = aomaskCache;
+        // set up for quick array traversals
+        var n = 0;
+        var materialDir = d * 2;
+        var data = arrT.data;
+        var dbase = arrT.index(i - 1, 0, 0);
+        var istride = arrT.stride[0];
+        var jstride = arrT.stride[1];
+        var kstride = arrT.stride[2];
+
+        for (var k = 0; k < len; ++k) {
+            var d0 = dbase;
+            dbase += kstride;
+            for (var j = 0; j < len; j++, n++, d0 += jstride) {
+
+                // mask[n] will represent the face needed between i-1,j,k and i,j,k
+                // for now, assume we never have two faces in both directions
+
+                // note that mesher zeroes out the mask as it goes, so there's 
+                // no need to zero it here when no face is needed
+
+                // IDs at i-1,j,k  and  i,j,k
+                var forwardFace = data[d0];
+                var backwardFace = data[d0 + istride];
 
                 // most common case: never a face between same voxel IDs, 
                 // so skip out early
-                if (id0 === id1) continue
-
-                var faceDir = getFaceDir(id0, id1, getMaterial, materialDir)
+                if (forwardFace === backwardFace) continue
+                
+                var faceDir = getFaceDir(forwardFace, backwardFace, getMaterial, materialDir)
+                // if this is a visible voxel
                 if (faceDir) {
                     // set regular mask value to material ID, sign indicating direction
                     mask[n] = (faceDir > 0) ?
-                        getMaterial(id0, materialDir) :
-                        -getMaterial(id1, materialDir + 1)
+                        getMaterial(forwardFace, materialDir) :
+                        -getMaterial(backwardFace, materialDir + 1)
 
                     // if doing AO, precalculate AO level for each face into second mask
                     if (doAO) {
@@ -604,6 +682,7 @@ function GreedyMesher(noa) {
         var n = 0
         var mask = maskCache
         var aomask = aomaskCache
+        var lights = lightCache;
 
         var x = [0, 0, 0]
         var du = [0, 0, 0]
@@ -621,23 +700,24 @@ function GreedyMesher(noa) {
             var h = 1
             for (var j = 0; j < len1; j += w, n += w) {
 
-                var maskVal = mask[n] | 0
+                var maskVal = mask[n] | 0;
                 if (!maskVal) {
-                    w = 1
+                    w = 1;
                     continue
                 }
-                var ao = aomask[n] | 0
+                var ao = aomask[n];
+                var light = lightCache[n];
 
                 // Compute width and height of area with same mask/aomask values
                 for (w = 1; w < len1 - j; ++w) {
-                    if (!maskCompareFcn(n + w, mask, maskVal, aomask, ao)) break
+                    if (!maskCompareFcn(n + w, mask, maskVal, aomask, ao, lights, light)) break
                 }
 
                 OUTER:
                 for (h = 1; h < len2 - k; ++h) {
                     for (var m = 0; m < w; ++m) {
                         var ix = n + m + h * len1
-                        if (!maskCompareFcn(ix, mask, maskVal, aomask, ao)) break OUTER
+                        if (!maskCompareFcn(ix, mask, maskVal, aomask, ao, lights, light)) break OUTER
                     }
                 }
 
@@ -658,7 +738,7 @@ function GreedyMesher(noa) {
                 var colorsArr = geomData.colors
                 var colorsIndex = nq * 16
                 var triDir = meshColorFcn(colorsArr, colorsIndex,
-                    getColor(matID), ao, aoValues, revAoVal)
+                    getColor(matID), ao, aoValues, revAoVal, light);
 
                 //Add quad positions - vertices = x -> x+du -> x+du+dv -> x+dv
                 x[u] = j
@@ -746,36 +826,39 @@ function GreedyMesher(noa) {
 
     // Helper functions with AO and non-AO implementations:
 
-    function maskCompare(index, mask, maskVal, aomask, aoVal) {
+    function maskCompare(index, mask, maskVal, aomask, aoVal, lightMask, lightVal) {
         if (maskVal !== mask[index]) return false
         if (aoVal !== aomask[index]) return false
+        if (lightVal !== lightMask[index]) return false;
         return true
     }
 
-    function maskCompare_noAO(index, mask, maskVal, aomask, aoVal) {
-        if (maskVal !== mask[index]) return false
-        return true
+    function maskCompare_noAO(index, mask, maskVal, aomask, aoVal, lightMask, lightVal) {
+        if (maskVal !== mask[index]) return false;
+        if (lightVal !== lightMask[index]) return false;
+        return true;
     }
 
-    function pushMeshColors_noAO(colors, ix, c, ao, aoValues, revAoVal) {
+    function pushMeshColors_noAO(colors, ix, c, ao, aoValues, revAoVal, lightVal) {
+        //lightVal = 0;
         for (var off = 0; off < 16; off += 4) {
-            colors[ix + off] = c[0]
-            colors[ix + off + 1] = c[1]
-            colors[ix + off + 2] = c[2]
+            colors[ix + off] = lightVal === 0 ? c[0] : c[0] + c[0] * 0.25 * lightVal;
+            colors[ix + off + 1] = lightVal === 0 ? c[1] : c[1] + c[1] * 0.25 * lightVal;
+            colors[ix + off + 2] = lightVal === 0 ? c[2] : c[2] + c[2] * 0.25 * lightVal;
             colors[ix + off + 3] = 1
         }
         return true // triangle direction doesn't matter for non-AO
     }
 
-    function pushMeshColors(colors, ix, c, ao, aoValues, revAoVal) {
+    function pushMeshColors(colors, ix, c, ao, aoValues, revAoVal, lightVal) {
         var ao00 = unpackAOMask(ao, 0, 0)
         var ao10 = unpackAOMask(ao, 1, 0)
         var ao11 = unpackAOMask(ao, 1, 1)
         var ao01 = unpackAOMask(ao, 0, 1)
-        pushAOColor(colors, ix, c, ao00, aoValues, revAoVal)
-        pushAOColor(colors, ix + 4, c, ao10, aoValues, revAoVal)
-        pushAOColor(colors, ix + 8, c, ao11, aoValues, revAoVal)
-        pushAOColor(colors, ix + 12, c, ao01, aoValues, revAoVal)
+        pushAOColor(colors, ix, c, ao00, aoValues, revAoVal, lightVal)
+        pushAOColor(colors, ix + 4, c, ao10, aoValues, revAoVal, lightVal)
+        pushAOColor(colors, ix + 8, c, ao11, aoValues, revAoVal, lightVal)
+        pushAOColor(colors, ix + 12, c, ao01, aoValues, revAoVal, lightVal)
 
         // this bit is pretty magical..
         var triDir = true
@@ -816,72 +899,80 @@ function GreedyMesher(noa) {
         var a11 = 1
 
         // inc occlusion of vertex next to obstructed side
-        if (solidLookup[data.get(ipos, j + 1, k)]) { ++a10; ++a11 }
-        if (solidLookup[data.get(ipos, j - 1, k)]) { ++a00; ++a01 }
-        if (solidLookup[data.get(ipos, j, k + 1)]) { ++a01; ++a11 }
-        if (solidLookup[data.get(ipos, j, k - 1)]) { ++a00; ++a10 }
-
-        // facing into a solid (non-opaque) block?
-        var facingSolid = solidLookup[data.get(ipos, j, k)]
-        if (facingSolid) {
-            // always 2, or 3 in corners
-            a11 = (a11 === 3 || solidLookup[data.get(ipos, j + 1, k + 1)]) ? 3 : 2
-            a01 = (a01 === 3 || solidLookup[data.get(ipos, j - 1, k + 1)]) ? 3 : 2
-            a10 = (a10 === 3 || solidLookup[data.get(ipos, j + 1, k - 1)]) ? 3 : 2
-            a00 = (a00 === 3 || solidLookup[data.get(ipos, j - 1, k - 1)]) ? 3 : 2
-            return a11 << 6 | a10 << 4 | a01 << 2 | a00
+        if (solidLookup[data.get(ipos, j + 1, k)]) {
+             ++a10; ++a11 
+        }
+        if (solidLookup[data.get(ipos, j - 1, k)]) { 
+            ++a00; ++a01 
+        }
+        if (solidLookup[data.get(ipos, j, k + 1)]) { 
+            ++a01; ++a11
+        }
+        if (solidLookup[data.get(ipos, j, k - 1)]) { 
+            ++a00; ++a10
         }
 
-        // simpler logic if skipping reverse AO?
-        if (skipReverse) {
-            // treat corner as occlusion 3 only if not occluded already
-            if (a11 === 1 && (solidLookup[data.get(ipos, j + 1, k + 1)])) { a11 = 2 }
-            if (a01 === 1 && (solidLookup[data.get(ipos, j - 1, k + 1)])) { a01 = 2 }
-            if (a10 === 1 && (solidLookup[data.get(ipos, j + 1, k - 1)])) { a10 = 2 }
-            if (a00 === 1 && (solidLookup[data.get(ipos, j - 1, k - 1)])) { a00 = 2 }
-            return a11 << 6 | a10 << 4 | a01 << 2 | a00
-        }
+        // // facing into a solid (non-opaque) block?
+        // var facingSolid = solidLookup[data.get(ipos, j, k)]
+        // if (facingSolid) {
+        //     // always 2, or 3 in corners
+        //     a11 = (a11 === 3 || solidLookup[data.get(ipos, j + 1, k + 1)]) ? 3 : 2
+        //     a01 = (a01 === 3 || solidLookup[data.get(ipos, j - 1, k + 1)]) ? 3 : 2
+        //     a10 = (a10 === 3 || solidLookup[data.get(ipos, j + 1, k - 1)]) ? 3 : 2
+        //     a00 = (a00 === 3 || solidLookup[data.get(ipos, j - 1, k - 1)]) ? 3 : 2
+        //     return a11 << 6 | a10 << 4 | a01 << 2 | a00
+        // }
 
-        // check each corner, and if not present do reverse AO
-        if (a11 === 1) {
-            if (solidLookup[data.get(ipos, j + 1, k + 1)]) {
-                a11 = 2
-            } else if (!(solidLookup[data.get(ineg, j, k + 1)]) ||
-                !(solidLookup[data.get(ineg, j + 1, k)]) ||
-                !(solidLookup[data.get(ineg, j + 1, k + 1)])) {
-                a11 = 0
-            }
-        }
+        // // simpler logic if skipping reverse AO?
+        // if (skipReverse) {
+        //     // treat corner as occlusion 3 only if not occluded already
+        //     if (a11 === 1 && (solidLookup[data.get(ipos, j + 1, k + 1)])) { a11 = 2 }
+        //     if (a01 === 1 && (solidLookup[data.get(ipos, j - 1, k + 1)])) { a01 = 2 }
+        //     if (a10 === 1 && (solidLookup[data.get(ipos, j + 1, k - 1)])) { a10 = 2 }
+        //     if (a00 === 1 && (solidLookup[data.get(ipos, j - 1, k - 1)])) { a00 = 2 }
+        //     return a11 << 6 | a10 << 4 | a01 << 2 | a00
+        // }
 
-        if (a10 === 1) {
-            if (solidLookup[data.get(ipos, j + 1, k - 1)]) {
-                a10 = 2
-            } else if (!(solidLookup[data.get(ineg, j, k - 1)]) ||
-                !(solidLookup[data.get(ineg, j + 1, k)]) ||
-                !(solidLookup[data.get(ineg, j + 1, k - 1)])) {
-                a10 = 0
-            }
-        }
+        // // check each corner, and if not present do reverse AO
+        // if (a11 === 1) {
+        //     if (solidLookup[data.get(ipos, j + 1, k + 1)]) {
+        //         a11 = 2
+        //     } else if (!(solidLookup[data.get(ineg, j, k + 1)]) ||
+        //         !(solidLookup[data.get(ineg, j + 1, k)]) ||
+        //         !(solidLookup[data.get(ineg, j + 1, k + 1)])) {
+        //         a11 = 0
+        //     }
+        // }
 
-        if (a01 === 1) {
-            if (solidLookup[data.get(ipos, j - 1, k + 1)]) {
-                a01 = 2
-            } else if (!(solidLookup[data.get(ineg, j, k + 1)]) ||
-                !(solidLookup[data.get(ineg, j - 1, k)]) ||
-                !(solidLookup[data.get(ineg, j - 1, k + 1)])) {
-                a01 = 0
-            }
-        }
+        // if (a10 === 1) {
+        //     if (solidLookup[data.get(ipos, j + 1, k - 1)]) {
+        //         a10 = 2
+        //     } else if (!(solidLookup[data.get(ineg, j, k - 1)]) ||
+        //         !(solidLookup[data.get(ineg, j + 1, k)]) ||
+        //         !(solidLookup[data.get(ineg, j + 1, k - 1)])) {
+        //         a10 = 0
+        //     }
+        // }
 
-        if (a00 === 1) {
-            if (solidLookup[data.get(ipos, j - 1, k - 1)]) {
-                a00 = 2
-            } else if (!(solidLookup[data.get(ineg, j, k - 1)]) ||
-                !(solidLookup[data.get(ineg, j - 1, k)]) ||
-                !(solidLookup[data.get(ineg, j - 1, k - 1)])) {
-                a00 = 0
-            }
-        }
+        // if (a01 === 1) {
+        //     if (solidLookup[data.get(ipos, j - 1, k + 1)]) {
+        //         a01 = 2
+        //     } else if (!(solidLookup[data.get(ineg, j, k + 1)]) ||
+        //         !(solidLookup[data.get(ineg, j - 1, k)]) ||
+        //         !(solidLookup[data.get(ineg, j - 1, k + 1)])) {
+        //         a01 = 0
+        //     }
+        // }
+
+        // if (a00 === 1) {
+        //     if (solidLookup[data.get(ipos, j - 1, k - 1)]) {
+        //         a00 = 2
+        //     } else if (!(solidLookup[data.get(ineg, j, k - 1)]) ||
+        //         !(solidLookup[data.get(ineg, j - 1, k)]) ||
+        //         !(solidLookup[data.get(ineg, j - 1, k - 1)])) {
+        //         a00 = 0
+        //     }
+        // }
 
         return a11 << 6 | a10 << 4 | a01 << 2 | a00
     }
@@ -898,12 +989,13 @@ function GreedyMesher(noa) {
 
     // premultiply vertex colors by value depending on AO level
     // then push them into color array
-    function pushAOColor(colors, ix, baseCol, ao, aoVals, revAoVal) {
-        var mult = (ao === 0) ? revAoVal : aoVals[ao - 1]
-        colors[ix] = baseCol[0] * mult
-        colors[ix + 1] = baseCol[1] * mult
-        colors[ix + 2] = baseCol[2] * mult
-        colors[ix + 3] = 1
+    function pushAOColor(colors, ix, baseCol, ao, aoVals, revAoVal, lightVal) {
+        lightVal = 0;
+        var mult = (ao === 0) ? revAoVal : aoVals[ao - 1];
+        colors[ix] = lightVal === 0 ? baseCol[0] * mult : 1;
+        colors[ix + 1] = lightVal === 0 ? baseCol[1] * mult : 1;
+        colors[ix + 2] = lightVal === 0 ? baseCol[2] * mult : 1;
+        colors[ix + 3] = 1;
     }
 
 }

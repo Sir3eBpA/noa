@@ -227,9 +227,10 @@ World.prototype.getBlockProperties = function (x, y, z) {
 World.prototype.setBlockID = function (val, x, y, z) {
     var [ci, cj, ck] = this._coordsToChunkIndexes(x, y, z)
     var chunk = this._storage.getChunkByIndexes(ci, cj, ck)
-    if (!chunk) return
+    if (!chunk) return false;
     var [i, j, k] = this._coordsToChunkLocals(x, y, z)
-    return chunk.set(i, j, k, val, x, y, z)
+    chunk.set(i, j, k, val, x, y, z)
+    return true;
 }
 
 

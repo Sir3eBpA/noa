@@ -456,18 +456,20 @@ export class Engine extends EventEmitter {
     addBlock(id, x, y = 0, z = 0) {
         // add a new terrain block, if nothing blocks the terrain there
         if (x.length) {
-            if (this.entities.isTerrainBlocked(x[0], x[1], x[2])) return
+            if (this.entities.isTerrainBlocked(x[0], x[1], x[2])) return false;
             this.world.setBlockID(id, x[0], x[1], x[2])
-            return id
+            return true;
         } else {
-            if (this.entities.isTerrainBlocked(x, y, z)) return
+            if (this.entities.isTerrainBlocked(x, y, z)) return false;
             this.world.setBlockID(id, x, y, z)
-            return id
+            return true;
         }
     }
 
 
-
+    dispose() {
+        
+    }
 
 
 
