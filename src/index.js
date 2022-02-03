@@ -113,6 +113,9 @@ export class Engine extends EventEmitter {
         this._paused = false
 
         /** @internal */
+        this._blockInput = false;
+
+        /** @internal */
         this._dragOutsideLock = opts.dragCameraOutsidePointerLock
 
         /** @internal */
@@ -356,8 +359,10 @@ export class Engine extends EventEmitter {
         profile_hook('tick event')
         profile_hook('end')
         // clear accumulated scroll inputs (mouseMove is cleared on render)
-        var st = this.inputs.state
-        st.scrollx = st.scrolly = st.scrollz = 0
+        if(this._blockInput) {
+            var st = this.inputs.state
+            st.scrollx = st.scrolly = st.scrollz = 0
+        }
     }
 
 
@@ -391,7 +396,9 @@ export class Engine extends EventEmitter {
         if (this.container.hasPointerLock ||
             !this.container.supportsPointerLock ||
             (this._dragOutsideLock && this.inputs.state.fire)) {
-            this.camera.applyInputsToCamera()
+
+            if(!this._blockInput)
+                this.camera.applyInputsToCamera()
         }
         profile_hook_render('init')
 
@@ -418,7 +425,7 @@ export class Engine extends EventEmitter {
         profile_hook_render('end')
 
         // clear accumulated mouseMove inputs (scroll inputs cleared on render)
-        this.inputs.state.dx = this.inputs.state.dy = 0
+        this.resetInput();
     }
 
 
@@ -427,10 +434,25 @@ export class Engine extends EventEmitter {
     /** Pausing the engine will also stop render/tick events, etc. */
     setPaused(paused = false) {
         this._paused = !!paused
+        this.setBlockInput(paused);
         // when unpausing, clear any built-up mouse inputs
         if (!paused) {
-            this.inputs.state.dx = this.inputs.state.dy = 0
+            this.resetInput();
         }
+    }
+
+    resetInput() {
+        this.inputs.state.dx = this.inputs.state.dy = 0
+    }
+
+    isInputBlocked() {
+        return this._blockInput;
+    }
+
+    setBlockInput(block) {
+        this._blockInput = block;
+        // allow pointer lock when the input is not blocked
+        this.container.setStickyPointerLock(!block);
     }
 
     /** 

@@ -18,7 +18,6 @@ export class Container extends EventEmitter {
     noa: import('../index').Engine;
     /** The game's DOM element container */
     element: any;
-    /** The `canvas` element that the game will draw into */
     canvas: any;
     /** Whether the browser supports pointerLock. @readonly */
     supportsPointerLock: boolean;
@@ -36,5 +35,9 @@ export class Container extends EventEmitter {
      * Sets whether `noa` should try to acquire or release pointerLock
     */
     setPointerLock(lock?: boolean): void;
+
+    setStickyPointerLock(stickyLock: boolean): void;
+
+    lockPointerNow() : void;
 }
 import { EventEmitter } from "events";

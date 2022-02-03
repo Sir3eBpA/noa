@@ -123,7 +123,15 @@ export class Container extends EventEmitter {
     */
     setPointerLock(lock = false) {
         // not sure if this will work robustly
-        this._shell.pointerLock = !!lock
+        this._shell.pointerLock = !!lock;
+    }
+
+    setStickyPointerLock(stickyLock) {
+        this._shell.stickyPointerLock = stickyLock;
+    }
+
+    lockPointerNow() {
+        this._shell.pointerLock = true;
     }
 }
 

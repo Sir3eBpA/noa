@@ -20,7 +20,7 @@ export default function (noa) {
 
         onRemove: null,
 
-        system: function inputProcessor(dt, states) {
+        system: function inputProcessor(dt, states) {            
             var ents = noa.entities
             var inputState = noa.inputs.state
             var camHeading = noa.camera.heading
@@ -28,7 +28,7 @@ export default function (noa) {
             for (var i = 0; i < states.length; i++) {
                 var state = states[i]
                 var moveState = ents.getMovement(state.__id)
-                setMovementState(moveState, inputState, camHeading)
+                setMovementState(moveState, inputState, camHeading, noa.isInputBlocked());
             }
         }
 
@@ -43,11 +43,16 @@ export default function (noa) {
  * @param {number} camHeading 
 */
 
-function setMovementState(state, inputs, camHeading) {
+function setMovementState(state, inputs, camHeading, inputBlocked) {
     state.jumping = !!inputs.jump
 
     var fb = inputs.forward ? (inputs.backward ? 0 : 1) : (inputs.backward ? -1 : 0)
     var rl = inputs.right ? (inputs.left ? 0 : 1) : (inputs.left ? -1 : 0)
+
+    if(inputBlocked) {
+        fb = rl = 0;
+        state.jumping = false;
+    }
 
     if ((fb | rl) === 0) {
         state.running = false

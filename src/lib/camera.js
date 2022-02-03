@@ -219,6 +219,9 @@ export class Camera {
     */
 
     applyInputsToCamera() {
+        if(this.noa.isInputBlocked())
+            return;
+        
         // dx/dy from input state
         var state = this.noa.inputs.state
         bugFix(state) // TODO: REMOVE EVENTUALLY    

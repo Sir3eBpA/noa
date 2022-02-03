@@ -47,6 +47,8 @@ export class Engine extends EventEmitter {
     /** @internal */
     _paused: boolean;
     /** @internal */
+    _blockInput: boolean;
+    /** @internal */
     _dragOutsideLock: any;
     /** @internal */
     _originRebaseDistance: any;
@@ -157,6 +159,9 @@ export class Engine extends EventEmitter {
     render(dt: any, framePart: any): void;
     /** Pausing the engine will also stop render/tick events, etc. */
     setPaused(paused?: boolean): void;
+    resetInput(): void;
+    isInputBlocked(): boolean;
+    setBlockInput(block: any): void;
     /**
      * Get the voxel ID at the specified position
     */
@@ -165,11 +170,12 @@ export class Engine extends EventEmitter {
      * Sets the voxel ID at the specified position.
      * Does not check whether any entities are in the way!
      */
-    setBlock(id: any, x: any, y?: number, z?: number): any;
+    setBlock(id: any, x: any, y?: number, z?: number): boolean;
     /**
      * Adds a block, unless there's an entity in the way.
     */
-    addBlock(id: any, x: any, y?: number, z?: number): any;
+    addBlock(id: any, x: any, y?: number, z?: number): boolean;
+    dispose(): void;
     /**
      * Precisely converts a world position to the current internal
      * local frame of reference.
@@ -232,6 +238,10 @@ export class Engine extends EventEmitter {
         normal: number[];
         _localPosition: number[];
     };
+
+    isInputBlocked() : boolean;
+
+    setBlockInput(block:boolean) : void;
 }
 import { EventEmitter } from "events";
 import { Container } from "./lib/container";
