@@ -16,8 +16,7 @@ import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial'
 import { Color3 } from '@babylonjs/core/Maths/math.color'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
-import { CreateLines } from '@babylonjs/core/Meshes/Builders/linesBuilder'
-import { CreatePlane } from '@babylonjs/core/Meshes/Builders/planeBuilder'
+import { MeshBuilder } from '@babylonjs/core'
 
 
 
@@ -130,7 +129,7 @@ function initScene(self, opts) {
     self._cameraHolder.visibility = false
 
     // plane obscuring the camera - for overlaying an effect on the whole view
-    self._camScreen = CreatePlane('camScreen', { size: 10 }, scene)
+    self._camScreen = MeshBuilder.CreatePlane('camScreen', { size: 10 }, scene)
     self.addMeshToScene(self._camScreen)
     self._camScreen.position.z = .1
     self._camScreen.parent = self._camera
@@ -410,7 +409,7 @@ function checkCameraEffect(self, id) {
 function getHighlightMesh(rendering) {
     var mesh = rendering._highlightMesh
     if (!mesh) {
-        mesh = CreatePlane("highlight", { size: 1.0 }, rendering._scene)
+        mesh = MeshBuilder.CreatePlane("highlight", { size: 1.0 }, rendering._scene)
         var hlm = rendering.makeStandardMaterial('highlightMat')
         hlm.backFaceCulling = false
         hlm.emissiveColor = new Color3(1, 1, 1)
@@ -419,7 +418,7 @@ function getHighlightMesh(rendering) {
 
         // outline
         var s = 0.5
-        var lines = CreateLines("hightlightLines", {
+        var lines = MeshBuilder.CreateLines("hightlightLines", {
             points: [
                 new Vector3(s, s, 0),
                 new Vector3(s, -s, 0),

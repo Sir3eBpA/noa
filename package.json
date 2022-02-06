@@ -23,7 +23,8 @@
         "url": "https://github.com/fenomas/noa/issues"
     },
     "dependencies": {
-        "@babylonjs/core": "^5.0.0-alpha.65",
+        "@babylonjs/core": "^4.2.1",
+        "babylonjs": "^4.2.1",
         "aabb-3d": "github:fenomas/aabb-3d",
         "box-intersect": "github:fenomas/box-intersect",
         "ent-comp": "^0.10.1",
@@ -37,7 +38,7 @@
         "voxel-physics-engine": "^0.11.1"
     },
     "peerDependencies": {
-        "@babylonjs/core": "^5.0.0-alpha.65"
+        "babylonjs": "^4.2.1"
     },
     "devDependencies": {
         "eslint": "^8.5.0",
