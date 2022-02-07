@@ -155,9 +155,17 @@ export class Entities extends ECS {
     */
     getEntitiesInAABB(box: any, withComponent: any): any[];
     /**
+     * Helper to set up player UI creation that follows specific entity
+     * @returns eid
+     */
+    addPlayerUI(playerUI: any, ownerMeshID: any, offsetY?: number, text?: string): number;
+    /**
      * Helper to set up a general entity, and populate with some common components depending on arguments.
     */
     add(position?: any, width?: number, height?: number, mesh?: any, meshOffset?: any, doPhysics?: boolean, shadow?: boolean): number;
+    /**
+     * Helper to remove an entity
+     */
     delete(eid: any): void;
 }
 import ECS from "ent-comp";

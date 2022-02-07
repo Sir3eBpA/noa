@@ -170,12 +170,11 @@ export class Engine extends EventEmitter {
      * Sets the voxel ID at the specified position.
      * Does not check whether any entities are in the way!
      */
-    setBlock(id: any, x: any, y?: number, z?: number): boolean;
+    setBlock(id: any, x: any, y?: number, z?: number): any;
     /**
      * Adds a block, unless there's an entity in the way.
     */
-    addBlock(id: any, x: any, y?: number, z?: number): boolean;
-    dispose(): void;
+    addBlock(id: any, x: any, y?: number, z?: number): any;
     /**
      * Precisely converts a world position to the current internal
      * local frame of reference.
@@ -238,10 +237,6 @@ export class Engine extends EventEmitter {
         normal: number[];
         _localPosition: number[];
     };
-
-    isInputBlocked() : boolean;
-
-    setBlockInput(block:boolean) : void;
 }
 import { EventEmitter } from "events";
 import { Container } from "./lib/container";

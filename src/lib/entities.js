@@ -340,7 +340,21 @@ export class Entities extends ECS {
         return hits
     }
 
+    /**
+     * Helper to set up player UI creation that follows specific entity
+     * @returns eid
+     */
+    addPlayerUI(playerUI, ownerMeshID, offsetY = 0) {
+        var eid = this.createEntity();
 
+        this.addComponent(eid, this.names.playerUI, {
+            playerUI: playerUI,
+            offsetY: offsetY,
+            ownerMeshID: ownerMeshID,
+        });
+
+        return eid;
+    }
 
     /** 
      * Helper to set up a general entity, and populate with some common components depending on arguments.
@@ -390,7 +404,7 @@ export class Entities extends ECS {
         return eid
     }
 
-    /*
+    /**
      * Helper to remove an entity
      */
     delete(eid) {
