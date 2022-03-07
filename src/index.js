@@ -43,7 +43,7 @@ var defaultOptions = {
     playerStart: [0, 10, 0],
     playerAutoStep: false,
     tickRate: 30,           // ticks per second
-    maxRenderRate: 0,       // max FPS, 0 for uncapped 
+    maxRenderRate: 0,       // max FPS, 0 for uncapped
     blockTestDistance: 10,
     stickyPointerLock: true,
     dragCameraOutsidePointerLock: true,
@@ -54,20 +54,20 @@ var defaultOptions = {
 
 
 /**
- * Main engine class.  
+ * Main engine class.
  * Takes an object full of optional settings as a parameter.
- * 
+ *
  * ```js
  * import { Engine } from 'noa-engine'
  * var noa = new Engine({
  *    debug: false,
  * })
  * ```
- * 
- * Note that the options object is also passed to noa's 
+ *
+ * Note that the options object is also passed to noa's
  * child modules ({@link Rendering}, {@link Container}, etc).
  * See docs for each module for their options.
- * 
+ *
  * @emits tick(dt)
  * @emits beforeRender(dt)
  * @emits afterRender(dt)
@@ -78,7 +78,7 @@ export class Engine extends EventEmitter {
 
     /**
      * The core Engine constructor uses the following options:
-     * 
+     *
      * ```js
      * var defaultOptions = {
      *    debug: false,
@@ -88,7 +88,7 @@ export class Engine extends EventEmitter {
      *    playerStart: [0, 10, 0],
      *    playerAutoStep: false,
      *    tickRate: 30,           // ticks per second
-     *    maxRenderRate: 0,       // max FPS, 0 for uncapped 
+     *    maxRenderRate: 0,       // max FPS, 0 for uncapped
      *    blockTestDistance: 10,
      *    stickyPointerLock: true,
      *    dragCameraOutsidePointerLock: true,
@@ -129,15 +129,15 @@ export class Engine extends EventEmitter {
         /** @internal */
         this.positionInCurrentTick = 0
 
-        /** 
-         * String identifier for the current world. 
-         * It's safe to ignore this if your game has only one level/world. 
+        /**
+         * String identifier for the current world.
+         * It's safe to ignore this if your game has only one level/world.
         */
         this.worldName = 'default'
 
         /**
-         * Multiplier for how fast time moves. Setting this to a value other than 
-         * `1` will make the game speed up or slow down. This can significantly 
+         * Multiplier for how fast time moves. Setting this to a value other than
+         * `1` will make the game speed up or slow down. This can significantly
          * affect how core systems behave (particularly physics!).
         */
         this.timeScale = 1
@@ -145,8 +145,8 @@ export class Engine extends EventEmitter {
         /** Child module for managing the game's container, canvas, etc. */
         this.container = new Container(this, opts)
 
-        /** The game's tick rate (ticks per second) 
-         * @readonly 
+        /** The game's tick rate (ticks per second)
+         * @readonly
         */
         this.tickRate = this.container._shell.tickRate
         Object.defineProperty(this, 'tickRate', {
@@ -187,13 +187,9 @@ export class Engine extends EventEmitter {
         this.playerEntity = ents.add(
             opts.playerStart, // starting location
             opts.playerWidth, opts.playerHeight,
-            null, null, // no mesh for now, no meshOffset, 
+            null, null, // no mesh for now, no meshOffset,
             true, true
         )
-
-        // make player entity it collide with terrain and other entities
-        ents.addComponent(this.playerEntity, ents.names.collideTerrain)
-        ents.addComponent(this.playerEntity, ents.names.collideEntities)
 
         // adjust default physics parameters
         var body = ents.getPhysics(this.playerEntity).body
@@ -217,21 +213,21 @@ export class Engine extends EventEmitter {
         /** How far to check for a solid voxel the player is currently looking at */
         this.blockTestDistance = opts.blockTestDistance
 
-        /** 
-         * Callback to determine which voxels can be targeted. 
+        /**
+         * Callback to determine which voxels can be targeted.
          * Defaults to a solidity check, but can be overridden with arbitrary logic.
-         * @type {(blockID: number) => boolean} 
+         * @type {(blockID: number) => boolean}
         */
         this.blockTargetIdCheck = this.registry.getBlockSolidity
 
-        /** 
+        /**
          * Dynamically updated object describing the currently targeted block.
-         * @type {null | { 
+         * @type {null | {
          *      blockID:number,
          *      position: number[],
          *      normal: number[],
          *      adjacent: number[],
-         * }} 
+         * }}
         */
         this.targetedBlock = null
 
@@ -324,7 +320,7 @@ export class Engine extends EventEmitter {
     */
 
     /**
-     * Tick function, called by container module at a fixed timestep. 
+     * Tick function, called by container module at a fixed timestep.
      * Clients should not normally need to call this manually.
      * @internal
     */
@@ -369,7 +365,7 @@ export class Engine extends EventEmitter {
 
 
     /**
-     * Render function, called every animation frame. Emits #beforeRender(dt), #afterRender(dt) 
+     * Render function, called every animation frame. Emits #beforeRender(dt), #afterRender(dt)
      * where dt is the time in ms *since the last tick*.
      * Clients should not normally need to call this manually.
      * @internal
@@ -455,7 +451,7 @@ export class Engine extends EventEmitter {
         this.container.setStickyPointerLock(!block);
     }
 
-    /** 
+    /**
      * Get the voxel ID at the specified position
     */
     getBlock(x, y = 0, z = 0) {
@@ -463,9 +459,9 @@ export class Engine extends EventEmitter {
         return this.world.getBlockID(x, y, z)
     }
 
-    /** 
-     * Sets the voxel ID at the specified position. 
-     * Does not check whether any entities are in the way! 
+    /**
+     * Sets the voxel ID at the specified position.
+     * Does not check whether any entities are in the way!
      */
     setBlock(id, x, y = 0, z = 0) {
         if (x.length) return this.world.setBlockID(x[0], x[1], x[2])
@@ -499,13 +495,13 @@ export class Engine extends EventEmitter {
     */
 
 
-    /** 
-     * Precisely converts a world position to the current internal 
+    /**
+     * Precisely converts a world position to the current internal
      * local frame of reference.
-     * 
+     *
      * See `/docs/positions.md` for more info.
-     * 
-     * Params: 
+     *
+     * Params:
      *  * `global`: input position in global coords
      *  * `globalPrecise`: (optional) sub-voxel offset to the global position
      *  * `local`: output array which will receive the result
@@ -524,18 +520,18 @@ export class Engine extends EventEmitter {
         }
     }
 
-    /** 
-     * Precisely converts a world position to the current internal 
+    /**
+     * Precisely converts a world position to the current internal
      * local frame of reference.
-     * 
+     *
      * See `/docs/positions.md` for more info.
-     * 
-     * Params: 
+     *
+     * Params:
      *  * `local`: input array of local coords
      *  * `global`: output array which receives the result
      *  * `globalPrecise`: (optional) sub-voxel offset to the output global position
-     * 
-     * If both output arrays are passed in, `global` will get int values and 
+     *
+     * If both output arrays are passed in, `global` will get int values and
      * `globalPrecise` will get fractional parts. If only one array is passed in,
      * `global` will get the whole output position.
     */
@@ -562,9 +558,9 @@ export class Engine extends EventEmitter {
 
     /**
      * Raycast through the world, returning a result object for any non-air block
-     * 
+     *
      * See `/docs/positions.md` for info on working with precise positions.
-     * 
+     *
      * @param {number[]} pos where to pick from (default: player's eye pos)
      * @param {number[]} dir direction to pick along (default: camera vector)
      * @param {number} dist pick distance (default: `noa.blockTestDistance`)
@@ -584,7 +580,7 @@ export class Engine extends EventEmitter {
 
     /**
      * @internal
-     * Do a raycast in local coords. 
+     * Do a raycast in local coords.
      * See `/docs/positions.md` for more info.
      * @param {number[]} pos where to pick from (default: player's eye pos)
      * @param {number[]} dir direction to pick along (default: camera vector)
@@ -628,14 +624,14 @@ export class Engine extends EventEmitter {
 
 
 /*
- * 
- * 
- * 
+ *
+ *
+ *
  *                  INTERNAL HELPERS
- * 
- * 
- * 
- * 
+ *
+ *
+ *
+ *
 */
 
 
@@ -664,7 +660,7 @@ function checkWorldOffset(noa) {
 
 
 
-// Each frame, by default pick along the player's view vector 
+// Each frame, by default pick along the player's view vector
 // and tell rendering to highlight the struck block face
 function updateBlockTargets(noa) {
     var newhash = 0
@@ -691,9 +687,9 @@ function updateBlockTargets(noa) {
 
 
 /*
- * 
+ *
  *  add some hooks for guidance on removed APIs
- * 
+ *
  */
 
 function deprecateStuff(noa) {

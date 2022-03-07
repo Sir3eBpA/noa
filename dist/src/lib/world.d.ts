@@ -98,6 +98,8 @@ export class World extends EventEmitter {
     /** @internal */
     _coordsToChunkLocals: typeof chunkCoordsToLocalsGeneral;
     /** @internal */
+    _worldCoordsToVoxelCoords: typeof convertWorldCoordsToVoxelCoords;
+    /** @internal */
     _coordShiftBits: number;
     /** @internal */
     _coordMask: number;
@@ -169,4 +171,5 @@ import Chunk from "./chunk";
 import { ChunkStorage } from "./util";
 declare function chunkCoordsToIndexesGeneral(x: any, y: any, z: any): number[];
 declare function chunkCoordsToLocalsGeneral(x: any, y: any, z: any): number[];
+declare function convertWorldCoordsToVoxelCoords(x: any, y: any, z: any): number[];
 export {};

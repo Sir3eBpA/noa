@@ -146,6 +146,19 @@ export class Entities extends ECS {
     */
     addComponentAgain(id: any, name: any, state: any): void;
     /**
+     * Add a component - if the entity had the component, it will be ignored
+     * @param id - entity id
+     * @param name - name of the component to add
+     * @param state - optional state
+     */
+    noaAddComponent(id: any, name: any, state?: any): void;
+    /**
+     * Check if entity has the component
+     * @param id - entity id
+     * @param name - name of the component to check
+     */
+    noaHasComponent(id: any, name: any): boolean;
+    /**
      * Checks whether a voxel is obstructed by any entity (with the
      * `collidesTerrain` component)
     */
@@ -158,7 +171,7 @@ export class Entities extends ECS {
      * Helper to set up player UI creation that follows specific entity
      * @returns eid
      */
-    addPlayerUI(playerUI: any, ownerMeshID: any, offsetY?: number, text?: string): number;
+    addPlayerUI(playerUI: any, ownerMeshID: any, offsetY?: number): number;
     /**
      * Helper to set up a general entity, and populate with some common components depending on arguments.
     */

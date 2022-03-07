@@ -1,4 +1,4 @@
-/** 
+/**
  * The ECS manager, found at [[Entities | `noa.entities`]] or [[Entities | `noa.ents`]].
  * @module noa.entities
  */
@@ -20,17 +20,17 @@ var defaultOptions = {
 
 /**
  * `noa.entities` - manages entities and components.
- * 
- * This class extends [ent-comp](https://github.com/fenomas/ent-comp), 
- * a general-purpose ECS. It's also decorated with noa-specific helpers and 
+ *
+ * This class extends [ent-comp](https://github.com/fenomas/ent-comp),
+ * a general-purpose ECS. It's also decorated with noa-specific helpers and
  * accessor functions for querying entity positions, etc.
- * 
- * Expects entity definitions in a specific format - see source `components` 
+ *
+ * Expects entity definitions in a specific format - see source `components`
  * folder for examples.
- * 
+ *
  * This module uses the following default options (from the options
  * object passed to the [[Engine]]):
- * 
+ *
  * ```js
  * var defaults = {
  *     shadowDistance: 10,
@@ -50,7 +50,7 @@ export class Entities extends ECS {
             'shadow': opts.shadowDistance,
         }
 
-        /** 
+        /**
          * @internal
          * @type {import('../index').Engine}
         */
@@ -69,14 +69,14 @@ export class Entities extends ECS {
         /*
          *
          *
-         * 
+         *
          *          ENTITY ACCESSORS
          *
          * A whole bunch of getters and such for accessing component state.
          * These are moderately faster than `ents.getState(whatever)`.
-         * 
-         * 
-         * 
+         *
+         *
+         *
         */
 
         /** @internal */
@@ -97,7 +97,7 @@ export class Entities extends ECS {
 
         /**
          * Returns the entity's position component state
-         * @type {(id:number) => null | import("../components/position").PositionState} 
+         * @type {(id:number) => null | import("../components/position").PositionState}
         */
         this.getPositionData = this.getStateAccessor(this.names.position)
 
@@ -112,14 +112,14 @@ export class Entities extends ECS {
 
         /**
          * Get the entity's `physics` component state.
-         * @type {(id:number) => null | import("../components/physics").PhysicsState} 
+         * @type {(id:number) => null | import("../components/physics").PhysicsState}
         */
         this.getPhysics = this.getStateAccessor(this.names.physics)
 
         /**
          * Returns the entity's physics body
          * Note, will throw if the entity doesn't have the position component!
-         * @type {(id:number) => null | import("../components/physics").RigidBody} 
+         * @type {(id:number) => null | import("../components/physics").RigidBody}
         */
         this.getPhysicsBody = (id) => {
             var state = this.getPhysics(id)
@@ -153,14 +153,14 @@ export class Entities extends ECS {
         /**
          * Returns the entity's `collideEntities` component state
          * @type {(id:number) => {
-         *      cylinder:boolean, collideBits:number, 
+         *      cylinder:boolean, collideBits:number,
          *      collideMask:number, callback: function}}
         */
         this.getCollideEntities = this.getStateAccessor(this.names.collideEntities)
 
 
         /**
-         * Pairwise collideEntities event - assign your own function to this 
+         * Pairwise collideEntities event - assign your own function to this
          * property if you want to handle entity-entity overlap events.
          * @type {(id1:number, id2:number) => void}
          */
@@ -171,24 +171,24 @@ export class Entities extends ECS {
 
 
     /*
-     * 
-     * 
+     *
+     *
      *      PUBLIC ENTITY STATE ACCESSORS
-     * 
-     * 
+     *
+     *
     */
 
 
     /** Set an entity's position, and update all derived state.
-     * 
+     *
      * In general, always use this to set an entity's position unless
      * you're familiar with engine internals.
-     * 
+     *
      * ```js
      * noa.ents.setPosition(playerEntity, [5, 6, 7])
      * noa.ents.setPosition(playerEntity, 5, 6, 7)  // also works
      * ```
-     * 
+     *
      * @param {number} id
      */
     setPosition(id, pos, y = 0, z = 0) {
@@ -198,7 +198,7 @@ export class Entities extends ECS {
         this._localSetPosition(id, loc)
     }
 
-    /** Set an entity's size 
+    /** Set an entity's size
      * @param {number} xs
      * @param {number} ys
      * @param {number} zs
@@ -242,9 +242,9 @@ export class Entities extends ECS {
     }
 
 
-    /** 
+    /**
      * helper to update everything derived from `_localPosition`
-     * @internal 
+     * @internal
     */
     _updateDerivedPositionData(id, posDat) {
         vec3.copy(posDat._renderPosition, posDat._localPosition)
@@ -263,16 +263,15 @@ export class Entities extends ECS {
      *
      *
      *      OTHER ENTITY MANAGEMENT APIs
-     * 
+     *
      *      note most APIs are on the original ECS module (ent-comp)
      *      these are some overlaid extras for noa
      *
      *
     */
 
-
-    /** 
-     * Safely add a component - if the entity already had the 
+    /**
+     * Safely add a component - if the entity already had the
      * component, this will remove and re-add it.
     */
     addComponentAgain(id, name, state) {
@@ -281,9 +280,30 @@ export class Entities extends ECS {
         this.addComponent(id, name, state)
     }
 
+    /**
+     * Add a component - if the entity had the component, it will be ignored
+     * @param id - entity id
+     * @param name - name of the component to add
+     * @param state - optional state
+     */
+    noaAddComponent(id, name, state = null) {
+        if(this.hasComponent(id, name))
+            return;
 
-    /** 
-     * Checks whether a voxel is obstructed by any entity (with the 
+        this.addComponent(id, name, state);
+    }
+
+    /**
+     * Check if entity has the component
+     * @param id - entity id
+     * @param name - name of the component to check
+     */
+    noaHasComponent(id, name) {
+        return this.hasComponent(id, name);
+    }
+
+    /**
+     * Checks whether a voxel is obstructed by any entity (with the
      * `collidesTerrain` component)
     */
     isTerrainBlocked(x, y, z) {
@@ -307,7 +327,7 @@ export class Entities extends ECS {
 
 
 
-    /** 
+    /**
      * Gets an array of all entities overlapping the given AABB
     */
     getEntitiesInAABB(box, withComponent) {
@@ -356,7 +376,7 @@ export class Entities extends ECS {
         return eid;
     }
 
-    /** 
+    /**
      * Helper to set up a general entity, and populate with some common components depending on arguments.
     */
     add(position = null, width = 1, height = 1,
@@ -414,16 +434,16 @@ export class Entities extends ECS {
 
 
 /*
- * 
- * 
- * 
+ *
+ *
+ *
  *          HELPERS
- * 
- * 
- * 
+ *
+ *
+ *
 */
 
-// safety helper - when rebasing, nudge extent away from 
+// safety helper - when rebasing, nudge extent away from
 // voxel boudaries, so floating point error doesn't carry us accross
 function nudgePosition(pos, index, dmin, dmax, id) {
     var min = pos[index] + dmin

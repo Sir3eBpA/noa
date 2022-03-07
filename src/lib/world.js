@@ -1,4 +1,4 @@
-/** 
+/**
  * The World class is found at [[World | `noa.world`]].
  * @module noa.world
  */
@@ -26,7 +26,7 @@ var defaultOptions = {
 
 /**
  * `noa.world` - manages world data, chunks, voxels.
- * 
+ *
  * This module uses the following default options (from the options
  * object passed to the [[Engine]]):
  * ```js
@@ -55,8 +55,8 @@ export class World extends EventEmitter {
         this.Chunk = Chunk // expose this class for ...reasons
 
         /**
-         * Game clients should set this if they need to manually control 
-         * which chunks to load and unload. When set, client should call 
+         * Game clients should set this if they need to manually control
+         * which chunks to load and unload. When set, client should call
          * `noa.world.manuallyLoadChunk` / `manuallyUnloadChunk` as needed.
          */
         this.manuallyControlChunkLoading = !!opts.manuallyControlChunkLoading
@@ -79,22 +79,22 @@ export class World extends EventEmitter {
         /** When true, worldgen queues will keep running if engine is paused. */
         this.worldGenWhilePaused = !!opts.worldGenWhilePaused
 
-        /** Limit the size of internal chunk processing queues 
-         * @type {number} 
+        /** Limit the size of internal chunk processing queues
+         * @type {number}
         */
         this.maxChunksPendingCreation = 10
 
-        /** Limit the size of internal chunk processing queues 
-         * @type {number} 
+        /** Limit the size of internal chunk processing queues
+         * @type {number}
         */
         this.maxChunksPendingMeshing = 10
 
-        /** Cutoff (in ms) of time spent each **tick** 
+        /** Cutoff (in ms) of time spent each **tick**
          * @type {number}
         */
         this.maxProcessingPerTick = 9
 
-        /** Cutoff (in ms) of time spent each **render** 
+        /** Cutoff (in ms) of time spent each **render**
          * @type {number}
         */
         this.maxProcessingPerRender = 5
@@ -153,6 +153,8 @@ export class World extends EventEmitter {
         this._coordsToChunkIndexes = chunkCoordsToIndexesGeneral
         /** @internal */
         this._coordsToChunkLocals = chunkCoordsToLocalsGeneral
+        /** @internal */
+        this._worldCoordsToVoxelCoords = convertWorldCoordsToVoxelCoords;
 
         // when chunk size is a power of two, override with bit-twiddling:
         var powerOfTwo = ((cs & cs - 1) === 0)
@@ -178,7 +180,7 @@ export class World extends EventEmitter {
  *
  *
  *
- *                  PUBLIC API 
+ *                  PUBLIC API
  *
  *
  *
@@ -248,7 +250,7 @@ World.prototype.isBoxUnobstructed = function (box) {
 }
 
 
-/** client should call this after creating a chunk's worth of data (as an ndarray)  
+/** client should call this after creating a chunk's worth of data (as an ndarray)
  * If userData is passed in it will be attached to the chunk
  * @param id
  * @param array
@@ -260,12 +262,12 @@ World.prototype.setChunkData = function (id, array, userData) {
 
 
 
-/** 
- * Sets the distances within which to load new chunks, and beyond which 
+/**
+ * Sets the distances within which to load new chunks, and beyond which
  * to unload them. Generally you want the remove distance to be somewhat
  * farther, so that moving back and forth across the same chunk border doesn't
  * keep loading/unloading the same distant chunks.
- * 
+ *
  * Both arguments can be numbers (number of voxels), or arrays like:
  * `[horiz, vert]` specifying different horizontal and vertical distances.
  * @param {number | number[]} addDist
@@ -302,11 +304,11 @@ World.prototype.setAddRemoveDistance = function (addDist = 2, remDist = 3) {
 
 
 
-/** Tells noa to discard voxel data within a given `AABB` (e.g. because 
- * the game client received updated data from a server). 
- * The engine will mark all affected chunks for disposal, and will later emit 
+/** Tells noa to discard voxel data within a given `AABB` (e.g. because
+ * the game client received updated data from a server).
+ * The engine will mark all affected chunks for disposal, and will later emit
  * new `worldDataNeeded` events (if the chunk is still in draw range).
- * Note that chunks invalidated this way will not emit a `chunkBeingRemoved` event 
+ * Note that chunks invalidated this way will not emit a `chunkBeingRemoved` event
  * for the client to save data from.
  */
 World.prototype.invalidateVoxelsInAABB = function (box) {
@@ -314,7 +316,7 @@ World.prototype.invalidateVoxelsInAABB = function (box) {
 }
 
 
-/** When manually controlling chunk loading, tells the engine that the 
+/** When manually controlling chunk loading, tells the engine that the
  * chunk containing the specified (x,y,z) needs to be created and loaded.
  * > Note: has no effect when `noa.world.manuallyControlChunkLoading` is not set.
  * @param x, y, z
@@ -326,7 +328,7 @@ World.prototype.manuallyLoadChunk = function (x, y, z) {
     this._chunksToRequest.add(i, j, k)
 }
 
-/** When manually controlling chunk loading, tells the engine that the 
+/** When manually controlling chunk loading, tells the engine that the
  * chunk containing the specified (x,y,z) needs to be unloaded and disposed.
  * > Note: has no effect when `noa.world.manuallyControlChunkLoading` is not set.
  * @param x, y, z
@@ -345,15 +347,15 @@ var manualErr = 'Set `noa.world.manuallyControlChunkLoading` if you need this AP
 
 
 /*
- * 
- * 
- * 
+ *
+ *
+ *
  *                  internals:
- * 
+ *
  *          tick functions that process queues and trigger events
- * 
- * 
- * 
+ *
+ *
+ *
 */
 
 /** @internal */
@@ -370,7 +372,7 @@ World.prototype.tick = function () {
         this._chunkAddSearchFrom = 0
     }
 
-    // if world has changed, mark everything to be removed, and ping 
+    // if world has changed, mark everything to be removed, and ping
     // removals queue so that player's chunk gets loaded back quickly
     if (this._prevWorldName !== this.noa.worldName) {
         markAllChunksForRemoval(this)
@@ -456,13 +458,13 @@ World.prototype._getChunkByCoords = function (x, y, z) {
 
 
 /*
- * 
- * 
- * 
+ *
+ *
+ *
  *              chunk queues and queue processing
- * 
- * 
- * 
+ *
+ *
+ *
 */
 
 
@@ -484,7 +486,7 @@ function initChunkQueues(world) {
     world._chunksSortedLocs = new LocationQueue()
 }
 
-// internal accessor for chunks to queue themeselves for remeshing 
+// internal accessor for chunks to queue themeselves for remeshing
 // after their data changes
 World.prototype._queueChunkForRemesh = function (chunk) {
     possiblyQueueChunkForMeshing(this, chunk)
@@ -693,13 +695,13 @@ function possiblyQueueChunkForMeshing(world, chunk) {
 
 
 /*
- * 
- * 
- * 
+ *
+ *
+ *
  *              chunk lifecycle - create / set / remove / modify
- * 
- * 
- * 
+ *
+ *
+ *
 */
 
 
@@ -790,13 +792,19 @@ function doChunkRemesh(world, chunk) {
 
 
 /*
- * 
- * 
+ *
+ *
  *          two different versions of logic to convert
  *          chunk coords to chunk indexes or local scope
- * 
- * 
+ *
+ *
 */
+function convertWorldCoordsToVoxelCoords(x, y, z) {
+    const outX = Math.floor(x);
+    const outY = Math.floor(y);
+    const outZ = Math.floor(z);
+    return [outX, outY, outZ];
+}
 
 function chunkCoordsToIndexesGeneral(x, y, z) {
     var cs = this._chunkSize
@@ -825,13 +833,13 @@ function chunkCoordsToLocalsPowerOfTwo(x, y, z) {
 
 
 /*
- * 
- * 
- * 
+ *
+ *
+ *
  *          misc helpers and implementation functions
- * 
- * 
- * 
+ *
+ *
+ *
 */
 
 
@@ -910,15 +918,15 @@ function makeDistanceTestFunction(xsize, ysize) {
 
 
 /*
- * 
- * 
- * 
- * 
+ *
+ *
+ *
+ *
  *                  debugging
- * 
- * 
- * 
- * 
+ *
+ *
+ *
+ *
 */
 
 /** @internal */

@@ -17,8 +17,8 @@ export default function (noa) {
             if (ents.hasPhysics(eid)) {
                 var body = ents.getPhysics(eid).body
                 body.onCollide = function bodyOnCollide(impulse) {
-                    var cb = noa.ents.getCollideTerrain(eid).callback
-                    if (cb) cb(impulse, eid)
+                    var cb = state.callback;
+                    if (cb) cb(impulse, eid);
                 }
             }
         },
@@ -26,7 +26,7 @@ export default function (noa) {
         onRemove: function (eid, state) {
             var ents = noa.entities
             if (ents.hasPhysics(eid)) {
-                ents.getPhysics(eid).body.onCollide = null
+                ents.getPhysics(eid).body.onCollide = null;
             }
         },
 
