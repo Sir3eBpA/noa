@@ -1,0 +1,10 @@
+{
+  "version": "v1",
+  "packages": {
+    "voxel-physics-engine": {
+      "signature": "d4b4c5b8d58df068c37808c15d86c197",
+      "file": true,
+      "replaced": "^0.11.1"
+    }
+  }
+}
