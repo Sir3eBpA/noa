@@ -204,7 +204,7 @@ export class Engine extends EventEmitter {
 
         // movement component - applies movement forces
         ents.addComponent(this.playerEntity, ents.names.movement, {
-            airJumps: 1
+            airJumps: opts.jumpsCount || 1
         })
 
         /** Manages the game's camera, view angle, sensitivity, etc. */
