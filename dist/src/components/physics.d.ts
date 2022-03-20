@@ -12,6 +12,7 @@ export default function _default(noa: import('..').Engine): {
     renderSystem: (dt: any, states: any) => void;
 };
 export function setPhysicsFromPosition(physState: any, posState: any): void;
+export function addForce(physState: any, x: any, y: any, z: any): void;
 /**
  * @typedef {Object} RigidBody
  * @prop {import('aabb-3d')} aabb
@@ -27,6 +28,7 @@ export function setPhysicsFromPosition(physState: any, posState: any): void;
  * @prop {number[]} velocity
  * @prop {number[]} resting
  * @prop {boolean} inFluid
+ * @prop {null | function} applyForce
  *
  */
 export class PhysicsState {
@@ -47,4 +49,5 @@ export type RigidBody = {
     velocity: number[];
     resting: number[];
     inFluid: boolean;
+    applyForce: null | Function;
 };

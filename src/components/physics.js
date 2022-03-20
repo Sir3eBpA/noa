@@ -1,4 +1,4 @@
-/** 
+/**
  * @module
  * @internal
  */
@@ -21,7 +21,8 @@ import vec3 from 'gl-vec3'
  * @prop {number[]} velocity
  * @prop {number[]} resting
  * @prop {boolean} inFluid
- * 
+ * @prop {null | function} applyForce
+ *
  */
 
 
@@ -87,8 +88,8 @@ export default function (noa) {
 
             // tickMS is time since last physics engine tick
             // to avoid temporal aliasing, render the state as if lerping between
-            // the last position and the next one 
-            // since the entity data is the "next" position this amounts to 
+            // the last position and the next one
+            // since the entity data is the "next" position this amounts to
             // offsetting each entity into the past by tickRate - dt
             // http://gafferongames.com/game-physics/fix-your-timestep/
 
@@ -109,7 +110,8 @@ export default function (noa) {
 
 
 // var offset = vec3.create()
-var local = vec3.create()
+var local = vec3.create();
+var force = vec3.create();
 
 export function setPhysicsFromPosition(physState, posState) {
     var box = physState.body.aabb
@@ -119,6 +121,12 @@ export function setPhysicsFromPosition(physState, posState) {
     vec3.add(box.max, box.base, box.vec)
 }
 
+export function addForce(physState, x, y, z) {
+    if(physState && physState.body) {
+        vec3.set(force, x, y, z);
+        physState.body.applyForce(force);
+    }
+}
 
 function setPositionFromPhysics(physState, posState) {
     var base = physState.body.aabb.base
@@ -136,6 +144,6 @@ function backtrackRenderPos(physState, posState, backtrackAmt, smoothed) {
     // (this is set after sudden movements like auto-stepping)
     if (smoothed) vec3.lerp(local, posState._renderPosition, local, 0.3)
 
-    // copy values over to renderPosition, 
+    // copy values over to renderPosition,
     vec3.copy(posState._renderPosition, local)
 }
