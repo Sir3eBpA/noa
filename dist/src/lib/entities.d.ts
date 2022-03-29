@@ -120,6 +120,7 @@ export class Entities extends ECS {
      * @param {number} id
      */
     setPosition(id: number, pos: any, y?: number, z?: number): void;
+    resetVelocity(id: any): void;
     addForce(id: any, x: any, y: any, z: any): void;
     /** Set an entity's size
      * @param {number} xs

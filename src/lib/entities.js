@@ -9,7 +9,7 @@ import ECS from 'ent-comp'
 
 import vec3 from 'gl-vec3'
 import { updatePositionExtents } from '../components/position'
-import {addForce, setPhysicsFromPosition} from '../components/physics'
+import {addForce, resetVelocity, setPhysicsFromPosition} from '../components/physics'
 
 
 
@@ -196,6 +196,11 @@ export class Entities extends ECS {
         // convert to local and defer impl
         var loc = this.noa.globalToLocal(pos, null, [])
         this._localSetPosition(id, loc)
+    }
+
+    resetVelocity(id) {
+        const physState = this.getPhysics(id);
+        resetVelocity(physState);
     }
 
     addForce(id, x, y, z) {

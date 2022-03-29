@@ -52,6 +52,9 @@ RigidBody.prototype.setPosition = function (p) {
 RigidBody.prototype.getPosition = function () {
     return vec3.clone(this.aabb.base)
 }
+RigidBody.prototype.resetVelocity = function () {
+    vec3.set(this.velocity, 0, 0, 0);
+}
 RigidBody.prototype.applyForce = function (f) {
     sanityCheck(f)
     vec3.add(this._forces, this._forces, f)

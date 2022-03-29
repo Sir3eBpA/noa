@@ -22,7 +22,7 @@ import vec3 from 'gl-vec3'
  * @prop {number[]} resting
  * @prop {boolean} inFluid
  * @prop {null | function} applyForce
- *
+ * @prop {null | function} resetVelocity
  */
 
 
@@ -125,6 +125,12 @@ export function addForce(physState, x, y, z) {
     if(physState && physState.body) {
         vec3.set(force, x, y, z);
         physState.body.applyForce(force);
+    }
+}
+
+export function resetVelocity(physState) {
+    if (physState && physState.body) {
+        physState.body.resetVelocity();
     }
 }
 
